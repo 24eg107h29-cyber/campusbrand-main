@@ -37,15 +37,23 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (!userRepository.existsByRole(UserRole.ADMIN)) {
-            User admin = new User(
-                adminName,
-                adminEmail,
-                passwordEncoder.encode(adminPassword),
-                UserRole.ADMIN
-            );
-            userRepository.save(admin);
-            log.info("Initialized default administrator: email={}, role=ADMIN", adminEmail);
-        }
+        userRepository.findByEmail(adminEmail).ifPresentOrElse(
+            existing -> {
+                existing.setPassword(passwordEncoder.encode(adminPassword));
+                existing.setRole(UserRole.ADMIN);
+                userRepository.save(existing);
+                log.info("Synchronized administrator credentials: email={}, role=ADMIN", adminEmail);
+            },
+            () -> {
+                User admin = new User(
+                    adminName,
+                    adminEmail,
+                    passwordEncoder.encode(adminPassword),
+                    UserRole.ADMIN
+                );
+                userRepository.save(admin);
+                log.info("Initialized default administrator: email={}, role=ADMIN", adminEmail);
+            }
+        );
     }
 }
