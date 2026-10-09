@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
+
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && API_BASE_URL.includes('localhost')) {
+  console.warn(
+    '[CampusBrand] Warning: Frontend is running in production, but VITE_API_URL is pointing to localhost. ' +
+    'Please set VITE_API_URL in your Vercel project settings to your Render backend URL (e.g. https://your-backend.onrender.com) and redeploy.'
+  );
+}
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,

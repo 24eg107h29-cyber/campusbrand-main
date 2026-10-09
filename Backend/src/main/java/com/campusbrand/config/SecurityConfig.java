@@ -30,7 +30,7 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Value("${app.frontend-url:http://localhost:5174,http://localhost:5173}")
+    @Value("${app.frontend-url:https://campusbrand-main.vercel.app,http://localhost:5174,http://localhost:5173}")
     private String frontendUrl;
 
     @Value("${spring.h2.console.enabled:false}")
@@ -72,16 +72,23 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        List<String> origins = new ArrayList<>();
+        List<String> origins = new ArrayList<>(Arrays.asList(
+            "https://campusbrand-main.vercel.app",
+            "https://*.vercel.app",
+            "https://*.onrender.com",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174"
+        ));
+
         if (frontendUrl != null) {
             for (String origin : frontendUrl.split(",")) {
-                if (!origin.trim().isBlank()) {
-                    origins.add(origin.trim());
+                String trimmed = origin.trim();
+                if (!trimmed.isBlank() && !origins.contains(trimmed)) {
+                    origins.add(trimmed);
                 }
             }
-        }
-        if (origins.isEmpty()) {
-            origins.addAll(Arrays.asList("http://localhost:5173", "http://localhost:5174"));
         }
 
         configuration.setAllowedOriginPatterns(origins);
