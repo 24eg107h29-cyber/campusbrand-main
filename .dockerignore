@@ -1,0 +1,11 @@
+.git
+.gitignore
+frontend
+node_modules
+target
+**/target
+Backend/target
+Backend/data
+Backend/uploads
+.idea
+*.log
