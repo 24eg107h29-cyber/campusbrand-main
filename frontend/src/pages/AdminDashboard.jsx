@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api, { downloadAssetFile } from '../services/api';
-import AssetPreview, { getAssetExtension } from '../components/AssetPreview';
+import AssetPreview, { getAssetExtension } from '../components/AssetPreview.jsx';
 
 export default function AdminDashboard() {
   const [assets, setAssets] = useState([]);

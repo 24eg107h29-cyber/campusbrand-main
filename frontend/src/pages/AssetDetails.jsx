@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api, { downloadAssetFile } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import AssetPreview, { getAssetExtension } from '../components/AssetPreview';
+import AssetPreview, { getAssetExtension } from '../components/AssetPreview.jsx';
 
 const categoryOptions = ['LOGO', 'POSTER', 'TEMPLATE', 'GUIDELINE', 'FONT', 'COLOR', 'OTHER'];
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import AssetPreview from '../components/AssetPreview';
+import AssetPreview from '../components/AssetPreview.jsx';
 
 const quickCategories = [
   { id: 'LOGO', title: 'Logos & Crests', desc: 'Identity marks', icon: '◒', color: '#4f46e5' },
