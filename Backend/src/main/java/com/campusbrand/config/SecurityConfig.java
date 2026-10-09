@@ -15,12 +15,14 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,8 +30,17 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Value("${app.frontend-url:http://localhost:5174}")
+    @Value("${app.frontend-url:http://localhost:5174,http://localhost:5173}")
     private String frontendUrl;
+
+    @Value("${spring.h2.console.enabled:false}")
+    private boolean h2ConsoleEnabled;
+
+    private final RateLimitingFilter rateLimitingFilter;
+
+    public SecurityConfig(RateLimitingFilter rateLimitingFilter) {
+        this.rateLimitingFilter = rateLimitingFilter;
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -60,13 +71,20 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            frontendUrl,
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "http://localhost:5174",
-            "http://127.0.0.1:5174"
-        ));
+
+        List<String> origins = new ArrayList<>();
+        if (frontendUrl != null) {
+            for (String origin : frontendUrl.split(",")) {
+                if (!origin.trim().isBlank()) {
+                    origins.add(origin.trim());
+                }
+            }
+        }
+        if (origins.isEmpty()) {
+            origins.addAll(Arrays.asList("http://localhost:5173", "http://localhost:5174"));
+        }
+
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(Arrays.asList("Content-Disposition", "Location"));
@@ -79,18 +97,31 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
+    SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        SecurityContextRepository securityContextRepository
+    ) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-            .securityContext(context -> context.securityContextRepository(securityContextRepository))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/health").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .anyRequest().authenticated()
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+                .contentTypeOptions(Customizer.withDefaults())
+                .xssProtection(Customizer.withDefaults())
             )
+            .sessionManagement(session -> session
+                .sessionFixation().migrateSession()
+            )
+            .securityContext(context -> context.securityContextRepository(securityContextRepository))
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers("/api/health").permitAll()
+                    .requestMatchers("/api/auth/**").permitAll();
+                if (h2ConsoleEnabled) {
+                    auth.requestMatchers("/h2-console/**").permitAll();
+                }
+                auth.anyRequest().authenticated();
+            })
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -106,7 +137,7 @@ public class SecurityConfig {
                     response.getWriter().write("{\"message\":\"Logged out successfully\"}");
                 })
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
+                .deleteCookies("CAMPUSBRAND_SESSION", "JSESSIONID")
             );
 
         return http.build();

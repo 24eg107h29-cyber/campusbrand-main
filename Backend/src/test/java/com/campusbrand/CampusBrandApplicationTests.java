@@ -245,4 +245,24 @@ class CampusBrandApplicationTests {
         mockMvc.perform(get("/api/assets/" + assetId).session(adminSession))
             .andExpect(status().isNotFound());
     }
+
+    @Test
+    @Order(9)
+    void rateLimiter_ShouldBlockExcessiveRequests() throws Exception {
+        com.campusbrand.config.RateLimitingFilter filter = new com.campusbrand.config.RateLimitingFilter(true, 3);
+        org.springframework.mock.web.MockHttpServletRequest request = new org.springframework.mock.web.MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("192.168.1.100");
+
+        for (int i = 0; i < 3; i++) {
+            org.springframework.mock.web.MockHttpServletResponse response = new org.springframework.mock.web.MockHttpServletResponse();
+            filter.doFilter(request, response, new org.springframework.mock.web.MockFilterChain());
+            org.junit.jupiter.api.Assertions.assertEquals(200, response.getStatus());
+        }
+
+        org.springframework.mock.web.MockHttpServletResponse blockedResponse = new org.springframework.mock.web.MockHttpServletResponse();
+        filter.doFilter(request, blockedResponse, new org.springframework.mock.web.MockFilterChain());
+        org.junit.jupiter.api.Assertions.assertEquals(429, blockedResponse.getStatus());
+        org.junit.jupiter.api.Assertions.assertTrue(blockedResponse.getContentAsString().contains("Too many"));
+    }
 }
+

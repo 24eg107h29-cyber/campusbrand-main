@@ -7,13 +7,18 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "assets")
+@Table(name = "assets", indexes = {
+    @Index(name = "idx_asset_category", columnList = "category"),
+    @Index(name = "idx_asset_created_at", columnList = "createdAt"),
+    @Index(name = "idx_asset_name", columnList = "name")
+})
 public class Asset {
 
     @Id

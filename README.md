@@ -6,3 +6,4 @@ CampusBrand is a centralized college branding and design asset management portal
 
 - `Backend/`: Spring Boot 3.3.5 REST API with Spring Security (Java 17).
 - `frontend/`: React 19 + Vite 7 SPA with responsive brand UI.
+

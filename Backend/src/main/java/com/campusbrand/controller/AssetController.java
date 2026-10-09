@@ -9,6 +9,7 @@ import com.campusbrand.service.AssetService;
 import jakarta.validation.Valid;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,15 +21,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/assets")
@@ -66,7 +70,10 @@ public class AssetController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public AssetResponse update(@PathVariable("id") Long id, @Valid @org.springframework.web.bind.annotation.RequestBody AssetUpdateRequest request) {
+    public AssetResponse update(
+        @PathVariable("id") Long id,
+        @Valid @RequestBody AssetUpdateRequest request
+    ) {
         return assetService.update(id, request);
     }
 
@@ -112,12 +119,17 @@ public class AssetController {
         }
         MediaType mediaType = mediaTypeFor(path);
         ContentDisposition disposition = (inline ? ContentDisposition.inline() : ContentDisposition.attachment())
-            .filename(asset.getFileName())
+            .filename(asset.getFileName(), StandardCharsets.UTF_8)
             .build();
 
+        CacheControl cacheControl = CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic();
+
         return ResponseEntity.ok()
+            .cacheControl(cacheControl)
             .contentType(mediaType)
             .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+            .header("X-Content-Type-Options", "nosniff")
+            .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'")
             .body(resource);
     }
 
