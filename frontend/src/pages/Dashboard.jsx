@@ -4,154 +4,114 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import AssetPreview from '../components/AssetPreview.jsx';
 
-const quickCategories = [
-  { id: 'LOGO', title: 'Logos & Crests', desc: 'Identity marks', icon: '◒', color: '#4f46e5' },
-  { id: 'POSTER', title: 'Posters & Media', desc: 'Campaign visuals', icon: '▤', color: '#0ea5e9' },
-  { id: 'TEMPLATE', title: 'Templates', desc: 'Decks & letterheads', icon: '▧', color: '#10b981' },
-  { id: 'GUIDELINE', title: 'Guidelines', desc: 'Brand compliance', icon: '◫', color: '#f59e0b' }
-];
-
-export default function Dashboard() {
-  const { user, isAdmin } = useAuth();
+function Dashboard() {
+  const { user } = useAuth();
   const [recentAssets, setRecentAssets] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.get('/assets')
       .then((res) => {
-        setTotalCount(res.data.length);
         setRecentAssets(res.data.slice(0, 4));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Member';
-
   return (
-    <div className="page-container">
-      {/* Modern Hero Greeting */}
-      <section className="dashboard-hero-card">
-        <div className="hero-card-left">
-          <span className="eyebrow-tag">CREATIVE WORKSPACE</span>
-          <h1 className="hero-card-title">
-            Welcome back, <span className="hero-name-accent">{firstName}</span>.
-          </h1>
-          <p className="hero-card-subtitle">
-            Access official university logos, posters, guidelines, and templates to keep our collegiate identity consistent and strong.
-          </p>
-
-          <div className="hero-card-actions">
-            <Link to="/assets" className="button-link primary-cta">
-              <span>Browse All Assets</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            </Link>
-
-            <Link to="/categories" className="button-link secondary-btn">
-              <span>View Categories</span>
-            </Link>
-
-            {isAdmin && (
-              <Link to="/admin/assets/upload" className="button-link secondary-btn">
-                <span>+ Upload New Asset</span>
-              </Link>
-            )}
-          </div>
+    <main className="dashboard-page">
+      <section className="dashboard-hero">
+        <div>
+          <p className="eyebrow">Good morning, {user?.name?.split(' ')[0] || 'designer'}</p>
+          <h1>Welcome to your<br /><em>creative space.</em></h1>
+          <p className="intro">Everything you need to create consistently and keep our campus identity strong.</p>
+          <Link className="button-link" to="/assets">Browse all assets <span>→</span></Link>
         </div>
-
-        <div className="hero-card-right">
-          <div className="brand-stat-pill">
-            <span className="stat-pill-num">{loading ? '...' : totalCount}</span>
-            <span className="stat-pill-label">Approved Assets</span>
-          </div>
-          <div className="brand-crest-box">
-            <span className="crest-initials">CB</span>
-            <small>EST. 2024</small>
-          </div>
+        <div className="dashboard-visual">
+          <span>BRAND<br /><strong>GUIDE</strong></span>
+          <small>2024 / 2025</small>
+          <i>✦</i>
         </div>
       </section>
 
-      {/* Explore By Category */}
-      <section className="dashboard-section-block">
-        <div className="section-title-row">
+      {/* Categories Section */}
+      <section className="dashboard-section" id="categories">
+        <div className="section-heading">
           <div>
-            <span className="eyebrow-tag">EXPLORE DIRECTORY</span>
-            <h2 className="section-heading-text">Categories</h2>
+            <p className="eyebrow">Explore the library</p>
+            <h2>Find what you need</h2>
           </div>
-          <Link to="/categories" className="inline-arrow-link">
-            <span>View all categories</span>
-            <span>↗</span>
-          </Link>
+          <Link className="arrow-link" to="/assets">View all <span>↗</span></Link>
         </div>
-
-        <div className="dashboard-category-grid">
-          {quickCategories.map((cat) => (
-            <Link
-              key={cat.id}
-              to={`/assets?category=${cat.id}`}
-              className="dash-category-card"
-            >
-              <div className="dash-cat-icon" style={{ color: cat.color }}>
-                {cat.icon}
-              </div>
-              <h3 className="dash-cat-title">{cat.title}</h3>
-              <p className="dash-cat-desc">{cat.desc}</p>
-            </Link>
-          ))}
+        <div className="quick-grid">
+          <Link to="/assets?category=LOGO" className="quick-card">
+            <span>◒</span>
+            <strong>Logos</strong>
+            <small>Identity marks</small>
+          </Link>
+          <Link to="/assets?category=POSTER" className="quick-card">
+            <span>▤</span>
+            <strong>Posters</strong>
+            <small>Event materials</small>
+          </Link>
+          <Link to="/assets?category=TEMPLATE" className="quick-card">
+            <span>▧</span>
+            <strong>Templates</strong>
+            <small>Ready to customize</small>
+          </Link>
+          <Link to="/assets?category=GUIDELINE" className="quick-card">
+            <span>◫</span>
+            <strong>Guidelines</strong>
+            <small>Stay on brand</small>
+          </Link>
         </div>
       </section>
 
-      {/* Recently Added Assets */}
-      <section className="dashboard-section-block">
-        <div className="section-title-row">
-          <div>
-            <span className="eyebrow-tag">LATEST ADDITIONS</span>
-            <h2 className="section-heading-text">Recently Added Resources</h2>
+      {/* Recently Added Section so user sees their uploaded assets immediately */}
+      {!loading && recentAssets.length > 0 && (
+        <section className="dashboard-section" style={{ paddingTop: '0' }}>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Recent uploads</p>
+              <h2>Latest assets in library</h2>
+            </div>
+            <Link className="arrow-link" to="/assets">All assets ({recentAssets.length}) <span>↗</span></Link>
           </div>
-          <Link to="/assets" className="inline-arrow-link">
-            <span>Explore repository</span>
-            <span>↗</span>
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="loading-grid-skeleton" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="skeleton-card" style={{ height: '240px' }} />
-            ))}
-          </div>
-        ) : recentAssets.length === 0 ? (
-          <div className="empty-state-panel">
-            <p>No assets uploaded yet in this environment.</p>
-            {isAdmin && (
-              <Link to="/admin/assets/upload" className="button-link primary-cta" style={{ marginTop: '12px' }}>
-                Upload First Asset
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="dashboard-recent-grid">
+          <div className="asset-grid">
             {recentAssets.map((asset) => (
-              <Link to={`/assets/${asset.id}`} key={asset.id} className="dash-recent-card">
-                <div className="dash-recent-preview">
+              <article className="asset-card" key={asset.id}>
+                <div className="asset-preview">
                   <AssetPreview asset={asset} variant="card" />
                 </div>
-                <div className="dash-recent-info">
-                  <span className={`category-pill pill-${asset.category.toLowerCase()}`}>
-                    {asset.category}
-                  </span>
-                  <h4>{asset.name}</h4>
-                  <small>{new Date(asset.createdAt).toLocaleDateString()}</small>
+                <h2>{asset.name}</h2>
+                <span className="category-label">{asset.category}</span>
+                <p>{asset.description || 'Official campus branding resource.'}</p>
+                <small>Added by {asset.uploadedBy} on {new Date(asset.createdAt).toLocaleDateString()}</small>
+                <div className="card-actions">
+                  <Link to={`/assets/${asset.id}`}>View details</Link>
+                  <a
+                    href={`${api.defaults.baseURL || ''}/assets/download/${asset.id}`}
+                    className="button-link compact-button secondary-button"
+                    style={{ padding: '4px 10px', fontSize: '0.78rem' }}
+                  >
+                    Download
+                  </a>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
-        )}
+        </section>
+      )}
+
+      <section className="dashboard-callout">
+        <div>
+          <p className="eyebrow">Create with confidence</p>
+          <h2>Good design starts<br />with the right <em>foundation.</em></h2>
+        </div>
+        <Link className="button-link secondary-button" to="/assets">Explore the library <span>→</span></Link>
       </section>
-    </div>
+    </main>
   );
 }
+
+export default Dashboard;

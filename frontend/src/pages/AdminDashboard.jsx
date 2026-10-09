@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api, { downloadAssetFile } from '../services/api';
-import AssetPreview, { getAssetExtension } from '../components/AssetPreview.jsx';
 
-export default function AdminDashboard() {
+function AdminDashboard() {
   const [assets, setAssets] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState(null);
@@ -50,179 +48,122 @@ export default function AdminDashboard() {
     }
   };
 
-  // Compute real metrics from loaded assets only
   const totalAssets = assets.length;
-  const uniqueCategories = new Set(assets.map((a) => a.category)).size;
-  const recentWeekUploads = assets.filter((a) => {
-    const assetDate = new Date(a.createdAt);
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    return assetDate >= oneWeekAgo;
-  }).length;
-
-  const filteredAssets = assets.filter((a) =>
-    a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const categoryCounts = assets.reduce((acc, curr) => {
+    acc[curr.category] = (acc[curr.category] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <div className="page-container">
-      <header className="page-header-block">
+    <main className="dashboard-page">
+      <header className="page-header">
         <div>
-          <span className="eyebrow-tag">ADMINISTRATION</span>
-          <h1 className="page-heading">Admin Dashboard</h1>
-          <p className="page-subheading">
-            Manage college branding assets, view library statistics, and oversee content permissions.
-          </p>
+          <p className="eyebrow">Administration Panel</p>
+          <h1>Admin Dashboard</h1>
+          <p className="intro">Manage college branding assets, view library statistics, and oversee content.</p>
         </div>
         <div className="page-header-actions">
-          <Link to="/admin/assets/upload" className="button-link primary-cta">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>Upload New Asset</span>
-          </Link>
+          <Link className="button-link" to="/admin/assets/upload">＋ Upload new asset</Link>
         </div>
       </header>
 
-      {error && (
-        <div className="alert-banner alert-error" style={{ marginBottom: '20px' }}>
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <p className="message error-message" style={{ marginTop: '20px' }}>{error}</p>}
 
-      {/* Real Statistics Calculated from Actual Database Records */}
-      <section className="admin-stats-grid">
-        <div className="admin-stat-card">
-          <div className="stat-card-top">
-            <span className="stat-card-title">TOTAL ASSETS</span>
-            <span className="stat-icon-badge">▦</span>
-          </div>
-          <div className="stat-number">{loading ? '...' : totalAssets}</div>
-          <p className="stat-caption">Published brand resources</p>
+      <section className="quick-grid" style={{ margin: '28px 0' }}>
+        <div className="quick-card" style={{ padding: '20px' }}>
+          <span style={{ fontSize: '1.4rem' }}>▦</span>
+          <strong style={{ fontSize: '1.8rem', marginTop: '6px' }}>{loading ? '...' : totalAssets}</strong>
+          <small>Total Uploaded Assets</small>
         </div>
-
-        <div className="admin-stat-card">
-          <div className="stat-card-top">
-            <span className="stat-card-title">ACTIVE CATEGORIES</span>
-            <span className="stat-icon-badge">◈</span>
-          </div>
-          <div className="stat-number">{loading ? '...' : uniqueCategories}</div>
-          <p className="stat-caption">Distinct resource types represented</p>
+        <div className="quick-card" style={{ padding: '20px' }}>
+          <span style={{ fontSize: '1.4rem' }}>◈</span>
+          <strong style={{ fontSize: '1.8rem', marginTop: '6px' }}>{loading ? '...' : Object.keys(categoryCounts).length}</strong>
+          <small>Active Categories</small>
         </div>
-
-        <div className="admin-stat-card">
-          <div className="stat-card-top">
-            <span className="stat-card-title">RECENT (7 DAYS)</span>
-            <span className="stat-icon-badge">✦</span>
-          </div>
-          <div className="stat-number">{loading ? '...' : recentWeekUploads}</div>
-          <p className="stat-caption">Assets added in the last week</p>
-        </div>
-
-        <div className="admin-stat-card">
-          <div className="stat-card-top">
-            <span className="stat-card-title">SECURITY ACCESS</span>
-            <span className="stat-icon-badge">🛡</span>
-          </div>
-          <div className="stat-number" style={{ fontSize: '1.4rem' }}>ROLE: ADMIN</div>
-          <p className="stat-caption">Full management & deletion privileges</p>
+        <div className="quick-card" style={{ padding: '20px' }}>
+          <span style={{ fontSize: '1.4rem' }}>🛡</span>
+          <strong style={{ fontSize: '1.2rem', marginTop: '12px' }}>Role: ADMIN</strong>
+          <small>Full Content Permissions</small>
         </div>
       </section>
 
-      {/* Asset Inventory Table */}
-      <section className="admin-table-container">
-        <div className="table-header-bar">
+      <section className="dashboard-section" style={{ paddingTop: '10px' }}>
+        <div className="section-heading">
           <div>
-            <h2 className="table-heading-title">Asset Inventory</h2>
-            <p className="table-heading-desc">List of all resources stored in the system</p>
+            <p className="eyebrow">Asset Inventory</p>
+            <h2>All Uploaded Resources</h2>
           </div>
-
-          <div className="table-filter-box">
-            <input
-              type="text"
-              className="table-search-input"
-              placeholder="Filter by name or category..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <Link className="arrow-link" to="/assets">View Public Grid <span>↗</span></Link>
         </div>
 
         {loading ? (
-          <div className="loading-state-panel">
-            <p>Loading asset inventory records...</p>
-          </div>
-        ) : filteredAssets.length === 0 ? (
-          <div className="empty-state-panel">
-            <p>No asset records match your criteria.</p>
+          <div className="empty-state"><strong>Loading asset records...</strong></div>
+        ) : assets.length === 0 ? (
+          <div className="empty-state">
+            <strong>No assets found in the database.</strong>
+            <span>Upload an official branding resource to get started.</span>
+            <Link className="button-link" to="/admin/assets/upload" style={{ marginTop: '16px' }}>
+              Upload first asset
+            </Link>
           </div>
         ) : (
-          <div className="table-responsive-wrapper">
-            <table className="modern-data-table">
+          <div style={{ overflowX: 'auto', background: 'white', border: '1px solid #e5e6e1' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
               <thead>
-                <tr>
-                  <th>Preview</th>
-                  <th>Asset Name</th>
-                  <th>Category</th>
-                  <th>Format</th>
-                  <th>Uploaded By</th>
-                  <th>Date Added</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                <tr style={{ borderBottom: '1px solid #e8e8e4', background: '#fafaf8' }}>
+                  <th style={{ padding: '14px 18px', fontWeight: 600, color: '#3d465b' }}>Name</th>
+                  <th style={{ padding: '14px 18px', fontWeight: 600, color: '#3d465b' }}>Category</th>
+                  <th style={{ padding: '14px 18px', fontWeight: 600, color: '#3d465b' }}>Filename</th>
+                  <th style={{ padding: '14px 18px', fontWeight: 600, color: '#3d465b' }}>Uploaded By</th>
+                  <th style={{ padding: '14px 18px', fontWeight: 600, color: '#3d465b' }}>Created</th>
+                  <th style={{ padding: '14px 18px', fontWeight: 600, color: '#3d465b', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAssets.map((asset) => (
-                  <tr key={asset.id}>
-                    <td style={{ width: '64px' }}>
-                      <div className="table-thumb-box">
-                        <AssetPreview asset={asset} variant="thumb" />
-                      </div>
-                    </td>
-                    <td>
-                      <Link to={`/assets/${asset.id}`} className="table-asset-link">
+                {assets.map((asset) => (
+                  <tr key={asset.id} style={{ borderBottom: '1px solid #f0f0ee' }}>
+                    <td style={{ padding: '14px 18px', fontWeight: 600 }}>
+                      <Link to={`/assets/${asset.id}`} style={{ color: '#6572e8' }}>
                         {asset.name}
                       </Link>
                     </td>
-                    <td>
-                      <span className={`category-pill pill-${asset.category.toLowerCase()}`}>
-                        {asset.category}
-                      </span>
+                    <td style={{ padding: '14px 18px' }}>
+                      <span className="category-label">{asset.category}</span>
                     </td>
-                    <td>
-                      <span className="file-format-badge">{getAssetExtension(asset)}</span>
-                    </td>
-                    <td className="table-text-muted">
-                      {asset.uploadedBy}
-                    </td>
-                    <td className="table-text-muted">
+                    <td style={{ padding: '14px 18px', color: '#697187' }}>{asset.fileName}</td>
+                    <td style={{ padding: '14px 18px', color: '#697187' }}>{asset.uploadedBy}</td>
+                    <td style={{ padding: '14px 18px', color: '#697187' }}>
                       {new Date(asset.createdAt).toLocaleDateString()}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div className="table-actions-group">
+                    <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '8px' }}>
                         <Link
                           to={`/assets/${asset.id}`}
-                          className="table-btn btn-details"
-                          title="View and edit"
+                          className="button-link compact-button secondary-button"
+                          style={{ padding: '6px 10px', fontSize: '0.75rem' }}
                         >
-                          View / Edit
+                          Details / Edit
                         </Link>
                         <button
                           type="button"
-                          className="table-btn btn-download"
+                          className="button-link compact-button secondary-button"
+                          style={{ padding: '6px 10px', fontSize: '0.75rem' }}
                           onClick={() => handleDownload(asset)}
-                          title="Download file"
                         >
                           Download
                         </button>
                         <button
                           type="button"
-                          className="table-btn btn-delete"
+                          className="compact-button"
+                          style={{
+                            padding: '6px 10px',
+                            fontSize: '0.75rem',
+                            color: '#b34e4e',
+                            background: '#fff0f0',
+                            border: '1px solid #fed7d7'
+                          }}
                           disabled={deletingId === asset.id}
                           onClick={() => handleDelete(asset.id, asset.name)}
-                          title="Delete asset"
                         >
                           {deletingId === asset.id ? 'Deleting...' : 'Delete'}
                         </button>
@@ -235,6 +176,8 @@ export default function AdminDashboard() {
           </div>
         )}
       </section>
-    </div>
+    </main>
   );
 }
+
+export default AdminDashboard;
