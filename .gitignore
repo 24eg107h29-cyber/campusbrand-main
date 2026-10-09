@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/timing.properties
+
+# Database / uploads
+Backend/data/
+*.db
+*.mv.db
+uploads/
+Backend/uploads/
+
+# Backups & Upgrade temporary logs
+_backups_pre_audit/
+.github/modernize/
+*.log
+
+# IDE & OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
