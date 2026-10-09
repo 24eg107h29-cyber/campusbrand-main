@@ -22,7 +22,7 @@ import java.util.UUID;
 @Service
 public class AssetService {
 
-    private static final List<String> ALLOWED_EXTENSIONS = List.of("png", "jpg", "jpeg", "svg", "pdf");
+    private static final List<String> ALLOWED_EXTENSIONS = List.of("png", "jpg", "jpeg", "svg", "webp", "gif", "pdf");
 
     private final AssetRepository assetRepository;
     private final Path uploadDirectory;
@@ -138,7 +138,7 @@ public class AssetService {
         }
         String originalName = file.getOriginalFilename();
         if (originalName == null || !ALLOWED_EXTENSIONS.contains(extensionOf(originalName))) {
-            throw new IllegalArgumentException("Only PNG, JPG, JPEG, SVG, and PDF files are supported");
+            throw new IllegalArgumentException("Only PNG, JPG, JPEG, SVG, WEBP, GIF, and PDF files are supported");
         }
     }
 

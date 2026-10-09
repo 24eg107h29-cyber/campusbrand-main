@@ -8,6 +8,7 @@ import UploadAsset from './pages/UploadAsset.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import Profile from './pages/Profile.jsx';
 import Landing from './pages/Landing.jsx';
+import Categories from './pages/Categories.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
@@ -28,6 +29,10 @@ function App() {
         <Route
           path="/assets"
           element={<ProtectedRoute>{withLayout(<Assets />)}</ProtectedRoute>}
+        />
+        <Route
+          path="/categories"
+          element={<ProtectedRoute>{withLayout(<Categories />)}</ProtectedRoute>}
         />
         <Route
           path="/assets/:id"

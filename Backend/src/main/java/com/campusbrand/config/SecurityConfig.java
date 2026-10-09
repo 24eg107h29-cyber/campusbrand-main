@@ -123,7 +123,9 @@ public class SecurityConfig {
             .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers("/api/health").permitAll()
-                    .requestMatchers("/api/auth/**").permitAll();
+                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/assets/preview/**").permitAll()
+                    .requestMatchers("/api/assets/download/**").permitAll();
                 if (h2ConsoleEnabled) {
                     auth.requestMatchers("/h2-console/**").permitAll();
                 }

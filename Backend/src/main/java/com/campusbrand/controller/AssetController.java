@@ -124,16 +124,28 @@ public class AssetController {
 
         CacheControl cacheControl = CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic();
 
-        return ResponseEntity.ok()
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
             .cacheControl(cacheControl)
             .contentType(mediaType)
             .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
-            .header("X-Content-Type-Options", "nosniff")
-            .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'")
-            .body(resource);
+            .header("X-Content-Type-Options", "nosniff");
+
+        if (mediaType.equals(MediaType.APPLICATION_PDF)) {
+            builder.header("Content-Security-Policy", "default-src 'self' data: blob:; object-src 'self' blob:; frame-ancestors *");
+        }
+
+        return builder.body(resource);
     }
 
     private MediaType mediaTypeFor(Path path) {
+        String fileName = path.getFileName().toString().toLowerCase();
+        if (fileName.endsWith(".png")) return MediaType.IMAGE_PNG;
+        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return MediaType.IMAGE_JPEG;
+        if (fileName.endsWith(".svg")) return MediaType.parseMediaType("image/svg+xml");
+        if (fileName.endsWith(".webp")) return MediaType.parseMediaType("image/webp");
+        if (fileName.endsWith(".gif")) return MediaType.IMAGE_GIF;
+        if (fileName.endsWith(".pdf")) return MediaType.APPLICATION_PDF;
+
         try {
             String contentType = Files.probeContentType(path);
             return contentType == null ? MediaType.APPLICATION_OCTET_STREAM : MediaType.parseMediaType(contentType);
