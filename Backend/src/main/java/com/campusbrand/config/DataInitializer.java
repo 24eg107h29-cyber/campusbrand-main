@@ -91,6 +91,9 @@ public class DataInitializer implements CommandLineRunner {
         } catch (Exception ignored) {
         }
 
+        // Generate genuine high-resolution PNG image files for all demo assets
+        DemoPngGenerator.generateAll(uploadDirectory);
+
         // 1. Seed or synchronize Admin User
         User admin = userRepository.findByEmail(adminEmail).map(existing -> {
             existing.setPassword(passwordEncoder.encode(adminPassword));
@@ -143,24 +146,69 @@ public class DataInitializer implements CommandLineRunner {
             CreatorApplication app = new CreatorApplication(
                 creatorUser,
                 "Department of Design & Media",
-                "Brand Identity, Poster Design, Vector Illustration",
+                "Brand Identity, Poster Design, Digital Layout",
                 "Passionate student designer creating campus event branding and poster visuals.",
-                "demo-art-cyber-summit.svg,demo-art-campus-library.svg"
+                "demo-art-cyber-summit.png,demo-art-campus-library.png"
             );
             app.setStatus(ApplicationStatus.APPROVED);
             app.setAdminFeedback("Outstanding portfolio quality and department alignment. Approved as verified campus creator.");
             app.setReviewedAt(LocalDateTime.now().minusDays(5));
             app.setReviewedBy(adminEmail);
             applicationRepository.save(app);
+        } else {
+            // Ensure existing application references PNGs
+            applicationRepository.findByApplicantOrderByCreatedAtDesc(creatorUser).forEach(app -> {
+                if (app.getSampleFiles() != null && app.getSampleFiles().contains(".svg")) {
+                    app.setSampleFiles(app.getSampleFiles().replace(".svg", ".png"));
+                    applicationRepository.save(app);
+                }
+            });
         }
 
-        // 6. Seed Realistic Demo Official Assets (Safe: only if name does not already exist)
+        // 6. Migrate any existing database Asset records from SVG to PNG
+        for (Asset asset : assetRepository.findAll()) {
+            boolean updated = false;
+            String original = asset.getFileName();
+            String stored = asset.getFilePath();
+            if (stored != null && stored.toLowerCase().endsWith(".svg")) {
+                stored = stored.replaceAll("(?i)\\.svg$", ".png");
+                updated = true;
+            }
+            if (original != null && original.toLowerCase().endsWith(".svg")) {
+                original = original.replaceAll("(?i)\\.svg$", ".png");
+                updated = true;
+            }
+            if (updated) {
+                asset.updateFile(original, stored);
+                assetRepository.save(asset);
+                log.info("Migrated asset '{}' stored and original file to PNG", asset.getName());
+            }
+        }
+
+        // 7. Migrate any existing database Artwork records from SVG to PNG
+        for (Artwork artwork : artworkRepository.findAll()) {
+            boolean updated = false;
+            if (artwork.getFilePath() != null && artwork.getFilePath().toLowerCase().endsWith(".svg")) {
+                artwork.setFilePath(artwork.getFilePath().replaceAll("(?i)\\.svg$", ".png"));
+                updated = true;
+            }
+            if (artwork.getFileName() != null && artwork.getFileName().toLowerCase().endsWith(".svg")) {
+                artwork.setFileName(artwork.getFileName().replaceAll("(?i)\\.svg$", ".png"));
+                updated = true;
+            }
+            if (updated) {
+                artworkRepository.save(artwork);
+                log.info("Migrated artwork '{}' stored and original file to PNG", artwork.getTitle());
+            }
+        }
+
+        // 8. Seed Realistic Demo Official Assets in PNG format
         seedAssetIfMissing(
             "Anurag University Official Crest & Seal",
             "Official institutional academic crest with seal and gold embellishments. Compliant with 2026 graduation and ceremony guidelines.",
             AssetCategory.LOGO,
-            "demo-anurag-crest-logo.svg",
-            "demo-anurag-crest-logo.svg",
+            "demo-anurag-crest-logo.png",
+            "demo-anurag-crest-logo.png",
             adminEmail
         );
 
@@ -168,8 +216,8 @@ public class DataInitializer implements CommandLineRunner {
             "Innovision 2026 National Tech Symposium Poster",
             "Official high-resolution print & digital key visual poster for the annual CSE Tech Symposium and 24-hr Hackathon.",
             AssetCategory.POSTER,
-            "demo-tech-fest-poster.svg",
-            "demo-tech-fest-poster.svg",
+            "demo-tech-fest-poster.png",
+            "demo-tech-fest-poster.png",
             adminEmail
         );
 
@@ -177,8 +225,8 @@ public class DataInitializer implements CommandLineRunner {
             "Student Activity Chapter Social Media Banner",
             "Standard 16:9 banner grid kit for student clubs, technical chapters, and guest lecture social announcements.",
             AssetCategory.TEMPLATE,
-            "demo-banner-template.svg",
-            "demo-banner-template.svg",
+            "demo-banner-template.png",
+            "demo-banner-template.png",
             adminEmail
         );
 
@@ -186,18 +234,18 @@ public class DataInitializer implements CommandLineRunner {
             "Campus Visual Identity & Typography Guidelines",
             "Official university design manual detailing primary color palette (#0F172A, #4338CA), typography rules, and clearspace standards.",
             AssetCategory.GUIDELINE,
-            "demo-brand-guidelines.svg",
-            "demo-brand-guidelines.svg",
+            "demo-brand-guidelines.png",
+            "demo-brand-guidelines.png",
             adminEmail
         );
 
-        // 7. Seed Demo Creator Artworks
+        // 9. Seed Demo Creator Artworks in PNG format
         Artwork art1 = seedArtworkIfMissing(
             "CyberShield 2026 Summit Identity",
             "Full visual identity system designed for the annual collegiate cybersecurity symposium and CTF competition.",
             "Branding",
-            "demo-art-cyber-summit.svg",
-            "demo-art-cyber-summit.svg",
+            "demo-art-cyber-summit.png",
+            "demo-art-cyber-summit.png",
             creatorUser
         );
 
@@ -205,8 +253,8 @@ public class DataInitializer implements CommandLineRunner {
             "Dawn at the Central Library",
             "Architectural vector silhouette capturing morning light over the Anurag central library complex.",
             "Illustration",
-            "demo-art-campus-library.svg",
-            "demo-art-campus-library.svg",
+            "demo-art-campus-library.png",
+            "demo-art-campus-library.png",
             creatorUser
         );
 
@@ -214,12 +262,12 @@ public class DataInitializer implements CommandLineRunner {
             "Robocon 2026 Key Visual",
             "Dynamic mechatronics event poster artwork showcasing the robotics team's national championship challenge.",
             "Poster",
-            "demo-art-robocon.svg",
-            "demo-art-robocon.svg",
+            "demo-art-robocon.png",
+            "demo-art-robocon.png",
             creatorUser
         );
 
-        // 8. Seed Genuine 1-5 Star Ratings & Reviews
+        // 10. Seed Genuine 1-5 Star Ratings & Reviews
         if (art1 != null && !ratingRepository.existsByArtworkAndUser(art1, regularUser)) {
             ratingRepository.save(new ArtworkRating(art1, regularUser, 5, "Incredible logo composition! The cyber neon aesthetic fits the symposium perfectly."));
         }
@@ -238,7 +286,7 @@ public class DataInitializer implements CommandLineRunner {
         if (!assetRepository.existsByName(name)) {
             Asset asset = new Asset(name, desc, cat, originalName, storedName, uploader);
             assetRepository.save(asset);
-            log.info("Seeded demo brand asset: {}", name);
+            log.info("Seeded demo brand asset in PNG format: {}", name);
         }
     }
 
@@ -251,7 +299,7 @@ public class DataInitializer implements CommandLineRunner {
         }
         Artwork artwork = new Artwork(title, desc, cat, originalName, storedName, creator);
         Artwork saved = artworkRepository.save(artwork);
-        log.info("Seeded creator artwork: {}", title);
+        log.info("Seeded creator artwork in PNG format: {}", title);
         return saved;
     }
 }
