@@ -64,6 +64,11 @@ function Dashboard() {
             <strong>Guidelines</strong>
             <small>Stay on brand</small>
           </Link>
+          <Link to="/community" className="quick-card" style={{ border: '1px solid #c7d2fe', background: '#f5f7ff' }}>
+            <span style={{ color: '#6366f1' }}>✦</span>
+            <strong style={{ color: '#4338ca' }}>Community</strong>
+            <small>Student creations</small>
+          </Link>
         </div>
       </section>
 

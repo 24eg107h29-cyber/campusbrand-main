@@ -9,6 +9,11 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import Profile from './pages/Profile.jsx';
 import Landing from './pages/Landing.jsx';
 import Categories from './pages/Categories.jsx';
+import CreativeCommunity from './pages/CreativeCommunity.jsx';
+import ArtworkDetails from './pages/ArtworkDetails.jsx';
+import ApplyCreator from './pages/ApplyCreator.jsx';
+import CreatorStudio from './pages/CreatorStudio.jsx';
+import AdminApplications from './pages/AdminApplications.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
@@ -39,8 +44,28 @@ function App() {
           element={<ProtectedRoute>{withLayout(<AssetDetails />)}</ProtectedRoute>}
         />
         <Route
+          path="/community"
+          element={<ProtectedRoute>{withLayout(<CreativeCommunity />)}</ProtectedRoute>}
+        />
+        <Route
+          path="/community/artworks/:id"
+          element={<ProtectedRoute>{withLayout(<ArtworkDetails />)}</ProtectedRoute>}
+        />
+        <Route
+          path="/apply-creator"
+          element={<ProtectedRoute>{withLayout(<ApplyCreator />)}</ProtectedRoute>}
+        />
+        <Route
+          path="/creator-studio"
+          element={<ProtectedRoute>{withLayout(<CreatorStudio />)}</ProtectedRoute>}
+        />
+        <Route
           path="/admin"
           element={<ProtectedRoute requiredRole="ADMIN">{withLayout(<AdminDashboard />)}</ProtectedRoute>}
+        />
+        <Route
+          path="/admin/applications"
+          element={<ProtectedRoute requiredRole="ADMIN">{withLayout(<AdminApplications />)}</ProtectedRoute>}
         />
         <Route
           path="/admin/assets/upload"

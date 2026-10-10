@@ -264,5 +264,135 @@ class CampusBrandApplicationTests {
         org.junit.jupiter.api.Assertions.assertEquals(429, blockedResponse.getStatus());
         org.junit.jupiter.api.Assertions.assertTrue(blockedResponse.getContentAsString().contains("Too many"));
     }
+
+    @Test
+    @Order(10)
+    void creatorApplication_FullWorkflow() throws Exception {
+        // 1. Regular user logs in
+        MvcResult userLoginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "email", "unittester@campusbrand.edu",
+                    "password", "secretPassword123"
+                ))))
+            .andExpect(status().isOk())
+            .andReturn();
+        MockHttpSession userSession = (MockHttpSession) userLoginResult.getRequest().getSession(false);
+
+        // 2. Regular user applies to become creator
+        MockMultipartFile sample = new MockMultipartFile("sampleFiles", "sample.png", "image/png", new byte[]{1, 2, 3});
+        MvcResult appResult = mockMvc.perform(multipart("/api/creator-applications")
+                .file(sample)
+                .param("department", "Computer Science")
+                .param("skills", "UI Design, Illustration")
+                .param("bio", "Student designer passionate about campus projects.")
+                .session(userSession))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status", is("PENDING")))
+            .andExpect(jsonPath("$.department", is("Computer Science")))
+            .andReturn();
+
+        Long appId = ((Number) objectMapper.readValue(appResult.getResponse().getContentAsString(), Map.class).get("id")).longValue();
+
+        // 3. User checks own application
+        mockMvc.perform(get("/api/creator-applications/my").session(userSession))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.hasApplication", is(true)))
+            .andExpect(jsonPath("$.application.status", is("PENDING")));
+
+        // 4. Admin logs in and approves application
+        MvcResult adminLoginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "email", "admin@campusbrand.edu",
+                    "password", "Admin@123"
+                ))))
+            .andExpect(status().isOk())
+            .andReturn();
+        MockHttpSession adminSession = (MockHttpSession) adminLoginResult.getRequest().getSession(false);
+
+        mockMvc.perform(post("/api/creator-applications/" + appId + "/review")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "status", "APPROVED",
+                    "feedback", "Great sample works! Approved."
+                )))
+                .session(adminSession))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status", is("APPROVED")));
+
+        // 5. Verify user's role is now CREATOR
+        mockMvc.perform(get("/api/auth/me").session(userSession))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.user.role", is("CREATOR")));
+    }
+
+    @Test
+    @Order(11)
+    void creatorArtwork_PublishAndRatingWorkflow() throws Exception {
+        // Creator logs in
+        MvcResult creatorLoginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "email", "creator@campusbrand.edu",
+                    "password", "Creator@123"
+                ))))
+            .andExpect(status().isOk())
+            .andReturn();
+        MockHttpSession creatorSession = (MockHttpSession) creatorLoginResult.getRequest().getSession(false);
+
+        // Creator publishes artwork
+        MockMultipartFile artFile = new MockMultipartFile("file", "creative-art.png", "image/png", new byte[]{4, 5, 6});
+        MvcResult createArtResult = mockMvc.perform(multipart("/api/artworks")
+                .file(artFile)
+                .param("title", "Campus Sunset Concept")
+                .param("description", "Vibrant evening view of student promenade")
+                .param("category", "Illustration")
+                .session(creatorSession))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.title", is("Campus Sunset Concept")))
+            .andExpect(jsonPath("$.category", is("Illustration")))
+            .andReturn();
+
+        Long artId = ((Number) objectMapper.readValue(createArtResult.getResponse().getContentAsString(), Map.class).get("id")).longValue();
+
+        // Creator cannot rate own artwork (Self-rating blocked)
+        mockMvc.perform(post("/api/artworks/" + artId + "/rate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "rating", 5,
+                    "review", "Self praise"
+                )))
+                .session(creatorSession))
+            .andExpect(status().isBadRequest());
+
+        // Regular user logs in and rates the artwork 5 stars
+        MvcResult userLoginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "email", "user@campusbrand.edu",
+                    "password", "User@123"
+                ))))
+            .andExpect(status().isOk())
+            .andReturn();
+        MockHttpSession userSession = (MockHttpSession) userLoginResult.getRequest().getSession(false);
+
+        mockMvc.perform(post("/api/artworks/" + artId + "/rate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "rating", 5,
+                    "review", "Splendid color palette and lighting!"
+                )))
+                .session(userSession))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.averageRating", is(5.0)))
+            .andExpect(jsonPath("$.ratingCount", is(1)));
+
+        // Verify reviews list
+        mockMvc.perform(get("/api/artworks/" + artId + "/reviews"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].rating", is(5)))
+            .andExpect(jsonPath("$[0].review", is("Splendid color palette and lighting!")));
+    }
 }
 

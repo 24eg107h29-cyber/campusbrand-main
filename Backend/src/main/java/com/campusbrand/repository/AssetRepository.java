@@ -15,4 +15,6 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     List<Asset> findByCategoryOrderByCreatedAtDesc(AssetCategory category);
 
     List<Asset> findByCategoryAndNameContainingIgnoreCaseOrderByCreatedAtDesc(AssetCategory category, String name);
+
+    boolean existsByName(String name);
 }

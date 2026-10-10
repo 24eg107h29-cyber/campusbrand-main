@@ -125,7 +125,12 @@ public class SecurityConfig {
                 auth.requestMatchers("/api/health").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/assets/preview/**").permitAll()
-                    .requestMatchers("/api/assets/download/**").permitAll();
+                    .requestMatchers("/api/assets/download/**").permitAll()
+                    .requestMatchers("/api/artworks/preview/**").permitAll()
+                    .requestMatchers("/api/artworks/download/**").permitAll()
+                    .requestMatchers("/api/creator-applications/sample/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/artworks/**").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/creators/**").permitAll();
                 if (h2ConsoleEnabled) {
                     auth.requestMatchers("/h2-console/**").permitAll();
                 }

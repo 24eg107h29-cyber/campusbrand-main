@@ -62,24 +62,30 @@ function AdminDashboard() {
           <h1>Admin Dashboard</h1>
           <p className="intro">Manage college branding assets, view library statistics, and oversee content.</p>
         </div>
-        <div className="page-header-actions">
+        <div className="page-header-actions" style={{ display: 'flex', gap: '10px' }}>
+          <Link className="secondary-button" to="/admin/applications">✓ Review Creator Applications</Link>
           <Link className="button-link" to="/admin/assets/upload">＋ Upload new asset</Link>
         </div>
       </header>
 
       {error && <p className="message error-message" style={{ marginTop: '20px' }}>{error}</p>}
 
-      <section className="quick-grid" style={{ margin: '28px 0' }}>
+      <section className="quick-grid" style={{ margin: '28px 0', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
         <div className="quick-card" style={{ padding: '20px' }}>
           <span style={{ fontSize: '1.4rem' }}>▦</span>
           <strong style={{ fontSize: '1.8rem', marginTop: '6px' }}>{loading ? '...' : totalAssets}</strong>
-          <small>Total Uploaded Assets</small>
+          <small>Total Official Assets</small>
         </div>
         <div className="quick-card" style={{ padding: '20px' }}>
           <span style={{ fontSize: '1.4rem' }}>◈</span>
           <strong style={{ fontSize: '1.8rem', marginTop: '6px' }}>{loading ? '...' : Object.keys(categoryCounts).length}</strong>
           <small>Active Categories</small>
         </div>
+        <Link to="/admin/applications" className="quick-card" style={{ padding: '20px', textDecoration: 'none', color: 'inherit' }}>
+          <span style={{ fontSize: '1.4rem', color: '#6366f1' }}>✓</span>
+          <strong style={{ fontSize: '1.2rem', marginTop: '12px', color: '#6366f1' }}>Creator Onboarding</strong>
+          <small>Review Applications →</small>
+        </Link>
         <div className="quick-card" style={{ padding: '20px' }}>
           <span style={{ fontSize: '1.4rem' }}>🛡</span>
           <strong style={{ fontSize: '1.2rem', marginTop: '12px' }}>Role: ADMIN</strong>

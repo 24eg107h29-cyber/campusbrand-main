@@ -74,6 +74,38 @@ function AppLayout({ children }) {
               <span>Categories</span>
             </NavLink>
 
+            <p className="sidebar-label sidebar-label-spaced">Creative Community</p>
+            <NavLink
+              to="/community"
+              className={({ isActive }) => (isActive ? 'active' : '')}
+              onClick={closeSidebar}
+            >
+              <span>✦</span>
+              <span>Community Showcase</span>
+            </NavLink>
+
+            {user?.role === 'CREATOR' && (
+              <NavLink
+                to="/creator-studio"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+                onClick={closeSidebar}
+              >
+                <span>✎</span>
+                <span>Creator Studio</span>
+              </NavLink>
+            )}
+
+            {user?.role === 'USER' && (
+              <NavLink
+                to="/apply-creator"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+                onClick={closeSidebar}
+              >
+                <span>★</span>
+                <span>Apply as Creator</span>
+              </NavLink>
+            )}
+
             {isAdmin && (
               <>
                 <p className="sidebar-label sidebar-label-spaced">Administration</p>
@@ -85,6 +117,14 @@ function AppLayout({ children }) {
                 >
                   <span>▦</span>
                   <span>Admin Dashboard</span>
+                </NavLink>
+                <NavLink
+                  to="/admin/applications"
+                  className={({ isActive }) => (isActive ? 'active' : '')}
+                  onClick={closeSidebar}
+                >
+                  <span>✓</span>
+                  <span>Creator Applications</span>
                 </NavLink>
                 <NavLink
                   to="/admin/assets/upload"
